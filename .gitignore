@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.js
+*.js.map
+*.d.ts
+.DS_Store
+.env
+.env.local
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

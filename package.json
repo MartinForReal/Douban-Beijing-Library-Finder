@@ -1,0 +1,28 @@
+{
+  "name": "douban-library-extension",
+  "version": "1.0.0",
+  "description": "Edge extension to check book availability in Jiatu library from Douban book pages",
+  "type": "module",
+  "scripts": {
+    "dev": "node build.js",
+    "build": "node build.js --production",
+    "watch": "node build.js && chokidar \"src/**/*.ts\" -c \"node build.js\""
+  },
+  "keywords": [
+    "douban",
+    "library",
+    "edge-extension",
+    "jiatu"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "esbuild": "^0.19.8",
+    "typescript": "^5.3.3",
+    "chokidar-cli": "^3.0.0"
+  },
+  "dependencies": {
+    "crypto-js": "^4.1.1"
+  }
+}
