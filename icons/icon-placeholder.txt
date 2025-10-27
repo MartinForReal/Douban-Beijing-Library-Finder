@@ -1,0 +1,17 @@
+Icon files needed for the extension:
+
+1. icon-16.png - 16x16 pixels (for browser toolbar)
+2. icon-48.png - 48x48 pixels (for extension management page)
+3. icon-128.png - 128x128 pixels (for Chrome Web Store/Edge Add-ons)
+
+Recommended icon design:
+- Book icon with library symbol
+- Use colors that match both Douban (green) and library (blue) themes
+- Simple, clear design that's recognizable at small sizes
+
+You can create these icons using:
+- Online tools like favicon.io or iconifier.net
+- Design software like Figma, Sketch, or Adobe Illustrator
+- Free icon generators
+
+For now, the extension will work without icons, but adding them will improve the user experience.

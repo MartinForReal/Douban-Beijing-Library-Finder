@@ -1,0 +1,42 @@
+{
+  "name": "douban-library-extension",
+  "version": "1.0.0",
+  "description": "豆瓣北京图书馆馆藏查询助手 - A browser extension that helps you check Beijing Library collection status on Douban book pages",
+  "author": "",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "npm run clean && npm run copy",
+    "clean": "node -e \"require('fs').rmSync('dist', {recursive: true, force: true})\"",
+    "copy": "node -e \"require('fs').mkdirSync('dist', {recursive: true})\" && node -e \"['manifest.json','content.js','background.js','styles.css','rules.json'].forEach(f => require('fs').copyFileSync(f, 'dist/' + f))\" && node -e \"require('fs').cpSync('icons', 'dist/icons', {recursive: true})\"",
+    "pack": "npm run build && cd dist && zip -r ../douban-library-extension.zip *",
+    "watch": "nodemon --watch . --ext js,json,css --exec npm run build",
+    "test": "echo 'Manual testing required - Load extension in Edge developer mode'",
+    "lint": "eslint *.js",
+    "lint:fix": "eslint *.js --fix"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "nodemon": "^3.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MartinForReal/Douban-Beijing-Library-Finder.git"
+  },
+  "keywords": [
+    "douban",
+    "library",
+    "browser-extension",
+    "edge-extension",
+    "chrome-extension",
+    "beijing-library",
+    "book-borrowing"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

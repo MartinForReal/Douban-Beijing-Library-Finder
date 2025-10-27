@@ -1,0 +1,55 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://bjyth.jiatu.cloud"
+        },
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://bjyth.jiatu.cloud/"
+        },
+        {
+          "header": "Sec-CH-UA",
+          "operation": "set",
+          "value": "\"Microsoft Edge\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\""
+        },
+        {
+          "header": "Sec-CH-UA-Mobile",
+          "operation": "set",
+          "value": "?0"
+        },
+        {
+          "header": "Sec-CH-UA-Platform",
+          "operation": "set",
+          "value": "\"Windows\""
+        },
+        {
+          "header": "Sec-Fetch-Dest",
+          "operation": "set",
+          "value": "empty"
+        },
+        {
+          "header": "Sec-Fetch-Mode",
+          "operation": "set",
+          "value": "cors"
+        },
+        {
+          "header": "Sec-Fetch-Site",
+          "operation": "set",
+          "value": "same-site"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "apps.jiatu.cloud/client/book/search",
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  }
+]

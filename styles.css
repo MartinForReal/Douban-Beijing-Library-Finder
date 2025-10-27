@@ -1,0 +1,40 @@
+/* Styles for the library borrow button */
+.library-borrow-btn {
+  display: inline-block;
+  padding: 3px 10px;
+  margin-left: 10px;
+  background-color: #37a;
+  color: #fff !important;
+  text-decoration: none !important;
+  border-radius: 3px;
+  font-size: 12px;
+  line-height: 1.5;
+  vertical-align: middle;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  font-weight: normal;
+  border: 1px solid #2868a2;
+}
+
+.library-borrow-btn:hover {
+  background-color: #2868a2;
+  color: #fff !important;
+  text-decoration: none !important;
+}
+
+.library-borrow-btn:active {
+  background-color: #1f5082;
+  border-color: #1f5082;
+}
+
+/* Match Douban's style for consistency */
+.library-borrow-btn {
+  font-family: Helvetica, Arial, sans-serif;
+  white-space: nowrap;
+}
+
+/* Add a small icon before the text (optional) */
+.library-borrow-btn::before {
+  content: "📚 ";
+  margin-right: 2px;
+}

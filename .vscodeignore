@@ -1,0 +1,10 @@
+node_modules/
+*.ts
+*.md
+.git/
+.gitignore
+.vscodeignore
+build.js
+package.json
+tsconfig.json
+docs/

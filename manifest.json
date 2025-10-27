@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "豆瓣北京图书馆馆藏查询助手",
+  "version": "1.0.0",
+  "description": "在豆瓣图书页面快速查询北京图书馆馆藏情况",
+  "author": "Library Helper",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "storage",
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "https://book.douban.com/*",
+    "https://bjyth.jiatu.cloud/*",
+    "https://apps.jiatu.cloud/*"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [{
+      "id": "ruleset_1",
+      "enabled": true,
+      "path": "rules.json"
+    }]
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://book.douban.com/subject/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  }
+}
