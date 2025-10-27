@@ -18,7 +18,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.10.0",
-    "esbuild": "^0.19.8",
+    "esbuild": "^0.25.0",
     "typescript": "^5.3.3",
     "chokidar-cli": "^3.0.0"
   },
