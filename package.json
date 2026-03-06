@@ -1,6 +1,6 @@
 {
   "name": "douban-library-extension",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "豆瓣北京图书馆馆藏查询助手 - A browser extension that helps you check Beijing Library collection status on Douban book pages",
   "author": "",
   "license": "MIT",
@@ -16,12 +16,10 @@
     "lint:fix": "eslint *.js --fix"
   },
   "devDependencies": {
-    "eslint": "^10.0.2",
-    "eslint-config-standard": "^17.1.0",
-    "eslint-plugin-import": "^2.29.1",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^7.2.1",
-    "nodemon": "^3.0.3"
+    "eslint": "^9.39.3",
+    "globals": "^17.4.0",
+    "neostandard": "^0.13.0",
+    "nodemon": "^3.1.14"
   },
   "repository": {
     "type": "git",
@@ -37,6 +35,6 @@
     "book-borrowing"
   ],
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   }
 }

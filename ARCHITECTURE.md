@@ -24,17 +24,19 @@ flowchart TD
 ## Component Structure
 
 ```
-ext/
-├── manifest.json           # Extension configuration
-├── content.js             # Runs on Douban pages
-├── background.js          # Handles cross-origin requests
-├── styles.css            # Button styling
-├── icons/                # Extension icons
+├── manifest.json           # Extension configuration (Manifest V3)
+├── content.js              # Runs on Douban pages
+├── background.js           # Service worker handling cross-origin API requests
+├── styles.css              # Button styling
+├── rules.json              # declarativeNetRequest rules for header modification
+├── eslint.config.js        # ESLint flat config (neostandard)
+├── icons/                  # Extension icons
 │   ├── icon-16.png
 │   ├── icon-48.png
 │   └── icon-128.png
-├── package.json          # Development dependencies
-└── README.md            # User documentation
+├── package.json            # Development dependencies & scripts
+├── ARCHITECTURE.md         # This document
+└── README.md               # User documentation
 ```
 
 ## Key Components
@@ -48,42 +50,52 @@ ext/
   - Handle button click events
 
 ### 2. Background Script (background.js)
-- **Purpose**: Handle cross-origin requests (CORS bypass)
+- **Purpose**: Handle cross-origin API requests (CORS bypass)
 - **Responsibilities**:
-  - Receive ISBN from content script
-  - Query library search API
-  - Parse HTML response
-  - Return availability status
+  - Receive ISBN from content script via `chrome.runtime.sendMessage`
+  - Generate authentication parameters (salt, sign, timestamp) for the library API
+  - Query `https://apps.jiatu.cloud/client/book/search` API
+  - Parse JSON response and extract availability data across branches
+  - Return structured availability info (available copies, libraries, detail URLs)
+
+### 3. Declarative Net Request Rules (rules.json)
+- **Purpose**: Modify request headers for the library API
+- **Sets**: `Origin`, `Referer`, `Sec-Fetch-*` headers to emulate same-site requests
+- **Target**: `apps.jiatu.cloud/client/book/search`
 
 ### 3. Manifest Configuration
 - **Permissions needed**:
-  - `https://book.douban.com/*` (content script injection)
-  - `https://bjyth.jiatu.cloud/*` (library API access)
   - `activeTab` (interact with current tab)
-  - `storage` (optional, for caching)
+  - `declarativeNetRequest` (modify API request headers)
+- **Host permissions**:
+  - `https://book.douban.com/*` (content script injection)
+  - `https://bjyth.jiatu.cloud/*` (library site)
+  - `https://apps.jiatu.cloud/*` (library search API)
 
 ## Data Flow
 
 1. **ISBN Extraction**:
-   - Look for ISBN in book info section
-   - Format: ISBN-10 or ISBN-13
-   - Location: Usually under "书籍信息" section
+   - Look for ISBN in `#info` section
+   - Supports ISBN-10 and ISBN-13 formats
+   - Strips hyphens for normalization
 
 2. **Library Query**:
-   - URL: `https://bjyth.jiatu.cloud/yuntu-pc/home/search/index?word={ISBN}`
-   - Method: GET request via background script
-   - Response: HTML page with search results
+   - API: `POST https://apps.jiatu.cloud/client/book/search`
+   - Auth: MD5-based sign generation with salt and timestamp
+   - Request body includes `libcode: "BJYTH"`, keyword (ISBN), and auth params
+   - Headers modified by `declarativeNetRequest` rules
 
 3. **Availability Check**:
-   - Parse HTML for book status
-   - Look for availability indicators
-   - Common patterns: "可借", "在架", "available"
+   - Parse JSON response for `books[]` array
+   - Check `availableLibs` and `ownerLibs` per book
+   - Map library codes to human-readable names via `aggData`
+   - Aggregate total/available copies across branches
 
 4. **Button Injection**:
-   - Location: Next to ISBN number
-   - Style: Blue button (#2E7FBE)
-   - Text: "图书馆借阅" or "Borrow"
-   - Action: Opens library page in new tab
+   - Location: Next to the ISBN field
+   - States: "图书馆借阅" (available, blue), "图书馆查看" (owned but unavailable, gray), "未找到此书" (not found, light gray)
+   - Tooltip: Shows per-branch availability details
+   - Action: Opens library detail/search page in new tab
 
 ## Technical Considerations
 
