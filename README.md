@@ -19,10 +19,29 @@
 - 📚 检查北京图书馆系统中的图书可用性
 - 🔗 在豆瓣页面上添加"图书馆借阅"按钮
 - 🎯 一键跳转到图书馆借阅页面
+- 📖 ISBN 未匹配时自动按书名搜索同名图书
+
+## 更新日志
+
+### v0.0.2
+- 新增：当 ISBN 未匹配到馆藏时，自动按书名搜索图书馆同名图书
+  - 若找到同名图书，显示橙色"搜索同名图书"按钮，点击跳转图书馆搜索页
+  - 若未找到同名图书，显示灰色"未找到此书"
+
+### v0.0.1
+- 初始版本
+- 自动提取豆瓣图书页面 ISBN 并查询北京图书馆馆藏
+- 显示可借/已借完/未找到三种状态按钮
+- 分馆可借详情 tooltip
 
 ## 安装说明
 
-### 方式一：从 GitHub Release 下载（推荐）
+### 方式一：从 Edge 应用商店安装（推荐）
+
+1. 访问 [Edge 应用商店页面](https://microsoftedge.microsoft.com/addons/detail/%E8%B1%86%E7%93%A3%E5%8C%97%E4%BA%AC%E5%9B%BE%E4%B9%A6%E9%A6%86%E9%A6%86%E8%97%8F%E6%9F%A5%E8%AF%A2%E5%8A%A9%E6%89%8B)
+2. 点击"获取"按钮即可安装
+
+### 方式二：从 GitHub Release 下载
 
 1. 访问 [Releases 页面](https://github.com/MartinForReal/Douban-Beijing-Library-Finder/releases)
 2. 下载最新版本的 `douban-beijing-library-finder-vX.X.X.zip` 文件
@@ -32,7 +51,7 @@
 6. 点击"加载解压的扩展"，选择解压后的文件夹
 7. 扩展安装完成！
 
-### 方式二：从源码安装
+### 方式三：从源码安装
 
 1. 下载或克隆此项目到本地
    ```bash
@@ -79,24 +98,31 @@
 ## 项目结构
 
 ```
-douban-library-extension/
-├── manifest.json        # 扩展配置文件
-├── content.js          # 内容脚本（在豆瓣页面运行）
-├── background.js       # 后台脚本（处理跨域请求）
-├── styles.css         # 样式文件
-├── icons/             # 扩展图标
+├── manifest.json        # 扩展配置文件 (Manifest V3)
+├── content.js           # 内容脚本（在豆瓣页面运行）
+├── background.js        # 后台服务工作线程（处理跨域 API 请求）
+├── styles.css           # 样式文件
+├── rules.json           # declarativeNetRequest 规则（请求头修改）
+├── eslint.config.js     # ESLint 配置（flat config）
+├── icons/               # 扩展图标
 │   ├── icon-16.png
 │   ├── icon-48.png
 │   └── icon-128.png
-├── ARCHITECTURE.md    # 架构设计文档
-└── README.md         # 本文档
+├── .github/             # GitHub 配置
+│   ├── dependabot.yml   # 依赖自动更新
+│   └── workflows/
+│       └── release.yml  # 自动发布流程
+├── ARCHITECTURE.md      # 架构设计文档
+├── package.json         # 开发依赖与脚本
+└── README.md            # 本文档
 ```
 
 ## 技术实现
 
 - **Manifest V3**: 使用最新的 Chrome/Edge 扩展标准
 - **Content Scripts**: 在豆瓣页面上提取 ISBN 并注入借阅按钮
-- **Service Worker**: 处理与图书馆系统的跨域请求
+- **Service Worker**: 处理与图书馆 API 的跨域请求
+- **declarativeNetRequest**: 修改请求头以通过 CORS 限制
 - **DOM 操作**: 动态修改页面内容，添加交互元素
 
 ## 支持的图书馆

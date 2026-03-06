@@ -1,90 +1,60 @@
 // Content script for Douban book pages
-console.log('豆瓣图书馆借阅助手已启动');
-
-// Inject styles
-function injectStyles() {
-  const style = document.createElement('style');
-  style.textContent = `
-    .library-borrow-btn {
-      display: inline-block;
-      padding: 3px 10px;
-      margin-left: 10px;
-      background-color: #37a;
-      color: #fff !important;
-      text-decoration: none !important;
-      border-radius: 3px;
-      font-size: 12px;
-      line-height: 1.5;
-      vertical-align: middle;
-      transition: background-color 0.2s ease;
-      cursor: pointer;
-      font-weight: normal;
-      border: 1px solid #2868a2;
-      font-family: Helvetica, Arial, sans-serif;
-      white-space: nowrap;
-    }
-    
-    .library-borrow-btn:hover {
-      background-color: #2868a2;
-      color: #fff !important;
-      text-decoration: none !important;
-    }
-    
-    .library-borrow-btn:active {
-      background-color: #1f5082;
-      border-color: #1f5082;
-    }
-    
-    .library-borrow-btn::before {
-      content: "📚 ";
-      margin-right: 2px;
-    }
-  `;
-  document.head.appendChild(style);
-}
 
 // Function to extract ISBN from the page
-function extractISBN() {
-  // Look for ISBN in the book info section
+function extractISBN () {
   const infoSection = document.querySelector('#info');
-  if (!infoSection) {
-    console.log('未找到书籍信息区域');
-    return null;
-  }
+  if (!infoSection) return null;
 
-  // Try to find ISBN using different patterns
   const infoText = infoSection.textContent;
-  
-  // Match ISBN-13 (13 digits) or ISBN-10 (10 digits with possible X at the end)
+
   const isbnPatterns = [
     /ISBN:\s*([0-9]{13})/i,
     /ISBN:\s*([0-9]{10}[0-9X]?)/i,
-    /ISBN:\s*([0-9-]{13,17})/i  // ISBN with hyphens
+    /ISBN:\s*([0-9-]{13,17})/i
   ];
 
   for (const pattern of isbnPatterns) {
     const match = infoText.match(pattern);
     if (match && match[1]) {
-      // Remove hyphens if present
-      const isbn = match[1].replace(/-/g, '');
-      console.log('找到ISBN:', isbn);
-      return isbn;
+      return match[1].replace(/-/g, '');
     }
   }
 
-  console.log('未找到ISBN');
   return null;
 }
 
+// Function to extract book title from the page
+function extractBookTitle () {
+  const titleElement = document.querySelector('h1 span[property="v:itemreviewed"]');
+  if (titleElement) return titleElement.textContent.trim();
+  const h1 = document.querySelector('h1');
+  if (h1) return h1.textContent.trim();
+  return null;
+}
+
+// Function to search library by title for similar books
+async function searchLibraryByTitle (title) {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'searchByTitle',
+      title
+    });
+    return response;
+  } catch (error) {
+    console.error('按书名搜索图书馆时出错:', error);
+    return { found: false };
+  }
+}
+
 // Function to check book availability in library
-async function checkLibraryAvailability(isbn) {
+async function checkLibraryAvailability (isbn) {
   try {
     // Send message to background script to handle the cross-origin request
     const response = await chrome.runtime.sendMessage({
       action: 'checkLibrary',
-      isbn: isbn
+      isbn
     });
-    
+
     return response;
   } catch (error) {
     console.error('检查图书馆可用性时出错:', error);
@@ -93,8 +63,8 @@ async function checkLibraryAvailability(isbn) {
 }
 
 // Function to create and inject the borrow button
-function injectBorrowButton(isbn, libraryInfo = {}) {
-  const defaultSearchUrl = `https://bjyth.jiatu.cloud/yuntu-pc/home/search/index?word=${isbn}`;
+function injectBorrowButton (isbn, result) {
+  const defaultSearchUrl = `https://bjyth.jiatu.cloud/yuntu-pc/home/search/index?word=${encodeURIComponent(isbn)}`;
   const infoSection = document.querySelector('#info');
   if (!infoSection) return;
 
@@ -108,91 +78,83 @@ function injectBorrowButton(isbn, libraryInfo = {}) {
     }
   }
 
-  if (!isbnSpan) {
-    console.log('未找到ISBN显示位置');
-    return;
-  }
+  if (!isbnSpan) return;
 
   const existingContainer = infoSection.querySelector('.library-borrow-container');
   if (existingContainer) {
     existingContainer.remove();
   }
 
-  const normalizedLibraries = Array.isArray(libraryInfo.libraries)
-    ? libraryInfo.libraries.map(lib => {
-        if (typeof lib === 'string') {
-          return { name: lib, available: true, availableCount: 1 };
-        }
-        if (lib && typeof lib === 'object') {
-          return {
-            name: lib.name || '图书馆',
-            available: lib.available !== false,
-            availableCount: typeof lib.availableCount === 'number' ? lib.availableCount : (lib.available ? 1 : 0)
-          };
-        }
-        return { name: '图书馆', available: false, availableCount: 0 };
-      })
+  // Normalize libraries from the result
+  const libraries = Array.isArray(result.libraries)
+    ? result.libraries.map(lib => {
+      if (typeof lib === 'string') {
+        return { name: lib, available: true, availableCount: 1 };
+      }
+      if (lib && typeof lib === 'object') {
+        return {
+          name: lib.name || '图书馆',
+          available: lib.available !== false,
+          availableCount: typeof lib.availableCount === 'number' ? lib.availableCount : (lib.available ? 1 : 0)
+        };
+      }
+      return { name: '图书馆', available: false, availableCount: 0 };
+    })
     : [];
 
-  const info = {
-    available: Boolean(libraryInfo.available),
-    hasBook: libraryInfo.hasBook !== undefined
-      ? Boolean(libraryInfo.hasBook)
-      : Boolean(libraryInfo.available) || normalizedLibraries.length > 0,
-    detailUrl: libraryInfo.detailUrl || null,
-    searchUrl: libraryInfo.searchUrl || null,
-    url: libraryInfo.url || libraryInfo.detailUrl || libraryInfo.searchUrl || defaultSearchUrl,
-    totalCopies: typeof libraryInfo.totalCopies === 'number'
-      ? libraryInfo.totalCopies
-      : normalizedLibraries.length,
-    availableCopies: typeof libraryInfo.availableCopies === 'number'
-      ? libraryInfo.availableCopies
-      : normalizedLibraries.filter(lib => lib.available).length,
-    libraries: normalizedLibraries,
-    message: libraryInfo.message || ''
-  };
+  const available = Boolean(result.available);
+  const hasBook = result.hasBook !== undefined
+    ? Boolean(result.hasBook)
+    : available || libraries.length > 0;
+  const url = result.url || result.detailUrl || result.searchUrl || defaultSearchUrl;
+  const availableCopies = typeof result.availableCopies === 'number'
+    ? result.availableCopies
+    : libraries.filter(lib => lib.available).length;
+  const totalCopies = typeof result.totalCopies === 'number'
+    ? result.totalCopies
+    : libraries.length;
 
   const borrowButton = document.createElement('a');
   borrowButton.className = 'library-borrow-btn';
 
-  if (info.available && info.availableCopies > 0) {
+  if (available && availableCopies > 0) {
     borrowButton.textContent = '图书馆借阅';
     borrowButton.style.backgroundColor = '#37a';
     borrowButton.style.borderColor = '#2868a2';
-  } else if (info.hasBook) {
+  } else if (hasBook) {
     borrowButton.textContent = '图书馆查看';
     borrowButton.style.backgroundColor = '#666';
     borrowButton.style.borderColor = '#555';
+  } else if (result.hasSimilar) {
+    borrowButton.textContent = '搜索同名图书';
+    borrowButton.style.backgroundColor = '#e09015';
+    borrowButton.style.borderColor = '#c07a10';
   } else {
     borrowButton.textContent = '未找到此书';
     borrowButton.style.backgroundColor = '#999';
     borrowButton.style.borderColor = '#888';
-    borrowButton.style.cursor = 'pointer';
   }
 
-  let targetHref = info.url || defaultSearchUrl;
-
-  if (info.hasBook) {
-    if (info.available) {
-      targetHref = info.detailUrl || info.url || info.searchUrl || defaultSearchUrl;
-    } else {
-      targetHref = info.detailUrl || info.searchUrl || info.url || defaultSearchUrl;
-    }
+  if (hasBook && available) {
+    borrowButton.href = result.detailUrl || url;
+  } else if (hasBook) {
+    borrowButton.href = result.detailUrl || result.searchUrl || url;
+  } else if (result.hasSimilar) {
+    borrowButton.href = result.similarSearchUrl || result.searchUrl || url;
   } else {
-    targetHref = info.searchUrl || info.url || defaultSearchUrl;
+    borrowButton.href = result.searchUrl || url;
   }
-
-  borrowButton.href = targetHref;
   borrowButton.target = '_blank';
   borrowButton.rel = 'noopener noreferrer';
 
+  // Build tooltip
   const tooltipLines = [];
-  if (info.message) {
-    tooltipLines.push(info.message);
+  if (result.message) {
+    tooltipLines.push(result.message);
   }
-  if (info.libraries.length > 0) {
-    tooltipLines.push(`共${info.totalCopies}本，可借${info.availableCopies}本`);
-    info.libraries.forEach(lib => {
+  if (libraries.length > 0) {
+    tooltipLines.push(`共${totalCopies}本，可借${availableCopies}本`);
+    libraries.forEach(lib => {
       const countText = lib.availableCount !== undefined ? `${lib.availableCount}本` : (lib.available ? '可借' : '不可借');
       tooltipLines.push(`${lib.name}：${countText}`);
     });
@@ -207,20 +169,21 @@ function injectBorrowButton(isbn, libraryInfo = {}) {
   buttonContainer.style.marginLeft = '10px';
   buttonContainer.appendChild(borrowButton);
 
-  if (info.available && info.availableCopies > 0) {
+  if (available && availableCopies > 0) {
     const availabilityText = document.createElement('span');
-    availabilityText.style.marginLeft = '5px';
-    availabilityText.style.color = '#37a';
-    availabilityText.style.fontSize = '12px';
-    availabilityText.textContent = `(可借${info.availableCopies}本)`;
+    availabilityText.style.cssText = 'margin-left:5px;color:#37a;font-size:12px';
+    availabilityText.textContent = `(可借${availableCopies}本)`;
     buttonContainer.appendChild(availabilityText);
-  } else if (info.hasBook) {
+  } else if (hasBook) {
     const unavailableText = document.createElement('span');
-    unavailableText.style.marginLeft = '5px';
-    unavailableText.style.color = '#888';
-    unavailableText.style.fontSize = '12px';
+    unavailableText.style.cssText = 'margin-left:5px;color:#888;font-size:12px';
     unavailableText.textContent = '(已借完)';
     buttonContainer.appendChild(unavailableText);
+  } else if (result.hasSimilar) {
+    const similarText = document.createElement('span');
+    similarText.style.cssText = 'margin-left:5px;color:#e09015;font-size:12px';
+    similarText.textContent = '(ISBN未匹配，有同名图书)';
+    buttonContainer.appendChild(similarText);
   }
 
   if (isbnTextNode && isbnTextNode.nodeType === Node.TEXT_NODE) {
@@ -228,75 +191,33 @@ function injectBorrowButton(isbn, libraryInfo = {}) {
   } else {
     infoSection.appendChild(buttonContainer);
   }
-
-  console.log('借阅按钮已更新', info);
 }
 
 // Main function to initialize the extension
-async function init() {
-  // Inject styles first
-  injectStyles();
-  
-  // Extract ISBN from the page
+async function init () {
   const isbn = extractISBN();
-  
-  if (!isbn) {
-    console.log('此页面没有ISBN信息');
-    return;
-  }
+  if (!isbn) return;
 
-  // Check library availability
   const result = await checkLibraryAvailability(isbn);
-  const defaultSearchUrl = `https://bjyth.jiatu.cloud/yuntu-pc/home/search/index?word=${isbn}`;
 
   if (!result) {
-    console.warn('未收到图书馆查询结果');
     injectBorrowButton(isbn, { available: false, hasBook: false });
     return;
   }
 
-  if (result.error) {
-    console.warn('图书馆查询出错:', result.error);
+  // If no book found by ISBN, try searching by title
+  if (!result.hasBook && !result.error) {
+    const title = extractBookTitle();
+    if (title) {
+      const titleResult = await searchLibraryByTitle(title);
+      if (titleResult && titleResult.found) {
+        result.hasSimilar = true;
+        result.similarSearchUrl = titleResult.searchUrl;
+      }
+    }
   }
 
-  const normalizedLibraries = Array.isArray(result.libraries)
-    ? result.libraries.map(lib => {
-        if (typeof lib === 'string') {
-          return { name: lib, available: true };
-        }
-        if (lib && typeof lib === 'object') {
-          return {
-            name: lib.name || '图书馆',
-            available: lib.available !== false
-          };
-        }
-        return { name: '图书馆', available: false };
-      })
-    : [];
-
-  const libraryInfo = {
-    available: Boolean(result.available),
-    hasBook: result.hasBook !== undefined
-      ? Boolean(result.hasBook)
-      : Boolean(result.available) || normalizedLibraries.length > 0,
-    detailUrl: result.detailUrl || null,
-    searchUrl: result.searchUrl || null,
-    url: result.url || result.detailUrl || result.searchUrl || defaultSearchUrl,
-    totalCopies: typeof result.totalCopies === 'number'
-      ? result.totalCopies
-      : normalizedLibraries.length,
-    availableCopies: typeof result.availableCopies === 'number'
-      ? result.availableCopies
-      : normalizedLibraries.filter(lib => lib.available).length,
-    libraries: normalizedLibraries,
-    message: result.message
-  };
-
-  injectBorrowButton(isbn, libraryInfo);
-
-  if (libraryInfo.message) {
-    console.log('图书馆提示:', libraryInfo.message);
-  }
+  injectBorrowButton(isbn, result);
 }
 
 // Wait for the page to fully load
