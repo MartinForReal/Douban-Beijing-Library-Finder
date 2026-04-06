@@ -16,7 +16,7 @@
     "lint:fix": "eslint *.js --fix"
   },
   "devDependencies": {
-    "eslint": "^10.1.0",
+    "eslint": "^10.2.0",
     "globals": "^17.4.0",
     "neostandard": "^0.13.0",
     "nodemon": "^3.1.14"
